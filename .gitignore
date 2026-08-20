@@ -104,3 +104,12 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+# Vuforia: datos generados en runtime/build
+/QCAR/
+
+# Burst: simbolos de depuracion generados al compilar
+*_BurstDebugInformation_DoNotShip/
+
+# Paquete de Vuforia: 138 MB, supera el limite de GitHub.
+# Se instala aparte y manifest.json lo referencia como "file:".
+/Packages/com.ptc.vuforia.engine-*.tgz
