@@ -102,6 +102,18 @@ public class JengaBuilder : MonoBehaviour
              "al desengancharla y no queden pegados al marcador.")]
     public bool carryChildrenAlong = true;
 
+    [Tooltip("Reacomoda a los munequitos alrededor de la torre en proporcion " +
+             "a su tamano. Con esto, cambiar blockSize los reubica y reescala " +
+             "solo, sin tener que tocar cada uno a mano.")]
+    public bool autoPlaceCarried = true;
+
+    [Tooltip("Distancia de los munequitos al eje de la torre, medida en anchos " +
+             "de torre. 1 los deja pegados al borde.")]
+    [Range(0.6f, 3f)] public float carriedRadiusFactor = 1.3f;
+
+    [Tooltip("Alto del munequito, medido en alturas de torre.")]
+    [Range(0.05f, 0.5f)] public float carriedHeightFactor = 0.18f;
+
     [Tooltip("Segundos de espera entre construir y liberar la fisica. " +
              "Da tiempo a que todos los bloques existan antes del primer " +
              "frame de simulacion. En el celular hace falta mas que en el PC.")]
@@ -176,6 +188,8 @@ public class JengaBuilder : MonoBehaviour
                 {
                     c.enabled = false;
                 }
+
+                if (autoPlaceCarried) AcomodarMunequito(child);
             }
         }
 
@@ -211,6 +225,40 @@ public class JengaBuilder : MonoBehaviour
         }
 
         if (autoRelease) StartCoroutine(AutoReleaseRoutine());
+    }
+
+    /// <summary>
+    /// Escala el munequito a una fraccion de la altura de la torre y lo corre
+    /// hasta el radio pedido, conservando el lado en el que ya estaba. La
+    /// altura actual se mide de sus propios Renderer, asi no hay que suponer
+    /// nada sobre como esta armado el prefab.
+    /// </summary>
+    private void AcomodarMunequito(Transform munequito)
+    {
+        float alturaTorre = layers * (blockSize.y + gap);
+
+        // --- escala ---
+        Bounds caja = new Bounds();
+        bool primero = true;
+
+        foreach (Renderer r in munequito.GetComponentsInChildren<Renderer>(true))
+        {
+            if (primero) { caja = r.bounds; primero = false; }
+            else caja.Encapsulate(r.bounds);
+        }
+
+        if (!primero && caja.size.y > 0.0001f)
+        {
+            munequito.localScale *= alturaTorre * carriedHeightFactor / caja.size.y;
+        }
+
+        // --- posicion: mismo angulo, nuevo radio ---
+        Vector3 dir = new Vector3(munequito.localPosition.x, 0f, munequito.localPosition.z);
+        if (dir.sqrMagnitude < 0.000001f) dir = Vector3.back;   // por si quedo en el centro
+        dir.Normalize();
+
+        float radio = blockSize.z * carriedRadiusFactor;
+        munequito.localPosition = new Vector3(dir.x * radio, 0f, dir.z * radio);
     }
 
     private IEnumerator AutoReleaseRoutine()
